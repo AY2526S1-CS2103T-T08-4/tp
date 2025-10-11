@@ -1,8 +1,11 @@
 package seedu.address.testutil;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.List;
 
+import seedu.address.model.booking.Booking;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
@@ -23,6 +26,7 @@ public class PersonBuilder {
     private Phone phone;
     private Email email;
     private Set<Tag> tags;
+    private List<Booking> bookings;
 
     /**
      * Creates a {@code PersonBuilder} with the default details.
@@ -78,8 +82,31 @@ public class PersonBuilder {
         return this;
     }
 
+    /**
+     * Adds a single {@code Booking} to the {@code Person} being built.
+     */
+    public PersonBuilder withBooking(String dateTimeString) {
+        LocalDateTime dateTime = Booking.parseDateTime(dateTimeString);
+        Booking booking = new Booking("Alice", dateTime, "Haircut appointment");
+        if (this.bookings == null) {
+            this.bookings = new java.util.ArrayList<>();
+        }
+        this.bookings.add(booking);
+        return this;
+    }
+
+    /**
+     * Adds multiple {@code Booking} objects.
+     */
+    public PersonBuilder withBookings(List<Booking> bookings) {
+        this.bookings = new java.util.ArrayList<>(bookings);
+        return this;
+    }
+
+
+
     public Person build() {
-        return new Person(name, phone, email, tags);
+        return new Person(name, phone, email, tags, bookings);
     }
 
 }

@@ -1,10 +1,8 @@
 package seedu.address.model.person;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
-import seedu.address.commons.util.StringUtil;
 import seedu.address.commons.util.ToStringBuilder;
 
 /**
@@ -24,19 +22,27 @@ import seedu.address.commons.util.ToStringBuilder;
     public boolean test(Person person) {
         switch (type) {
 
-        case NAME:
-            return keywords.stream()
-                    .anyMatch(keyword -> 
-                            person.getName().fullName.toLowerCase().contains(keyword.toLowerCase()));    
-            
-        case TAG:
-            return person.getTags().stream()
-                    .map(tag -> tag.tagName.toLowerCase())
+            case NAME:
+                return keywords.stream()
+                        .anyMatch(keyword ->
+                                person.getName().fullName.toLowerCase().contains(keyword.toLowerCase()));
+
+            case TAG:
+                return person.getTags().stream()
+                        .map(tag -> tag.tagName.toLowerCase())
                         .anyMatch(tagName ->
                                 keywords.stream()
-                                        .anyMatch(keyword -> tagName.equals(keyword.toLowerCase())));    
+                                        .anyMatch(keyword -> tagName.equals(keyword.toLowerCase())));
 
-        }
+
+            case DATE:
+                return keywords.stream()
+                        .anyMatch(keyword ->
+                                person.getBookings().stream()
+                                        .map(booking -> booking.getDateTime().toLocalDate().toString())
+                                        .anyMatch(date -> date.equals(keyword)));
+
+        }            
         return false;
     }
 
@@ -52,7 +58,8 @@ import seedu.address.commons.util.ToStringBuilder;
         }
 
         ClientContainsKeywordsPredicate otherNameContainsKeywordsPredicate = (ClientContainsKeywordsPredicate) other;
-        return keywords.equals(otherNameContainsKeywordsPredicate.keywords);
+        return (this.type == otherNameContainsKeywordsPredicate.type) && (
+                keywords.equals(otherNameContainsKeywordsPredicate.keywords));
     }
 
     @Override
