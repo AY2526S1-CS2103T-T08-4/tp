@@ -9,7 +9,9 @@ import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
@@ -41,6 +43,8 @@ public class BookCommand extends Command {
             + "or add them first.";
     public static final String MESSAGE_DOUBLE_BOOKING = "%1$s is already booked at %2$s with client '%3$s' for [%4$s].";
 
+    private static final Logger logger = LogsCenter.getLogger(BookCommand.class);
+
     private final Name personName;
     private final String clientName;
     private final LocalDateTime datetime;
@@ -65,6 +69,9 @@ public class BookCommand extends Command {
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
 
+        logger.info(String.format("Executing BookCommand for person: %s with client: %s at %s",
+                personName, clientName, datetime));
+
         // Find the person by name
         Person personToBook = null;
         for (Person person : model.getFilteredPersonList()) {
@@ -75,6 +82,7 @@ public class BookCommand extends Command {
         }
 
         if (personToBook == null) {
+            logger.warning(String.format("Person not found for booking: %s", personName));
             throw new CommandException(String.format(MESSAGE_PERSON_NOT_FOUND, personName));
         }
 
@@ -82,6 +90,7 @@ public class BookCommand extends Command {
         Booking newBooking = new Booking(clientName, datetime, description);
         for (Booking existingBooking : personToBook.getBookings()) {
             if (existingBooking.conflictsWith(newBooking)) {
+                logger.warning(String.format("Double booking detected for %s at %s", personName, datetime));
                 throw new CommandException(String.format(MESSAGE_DOUBLE_BOOKING,
                         personName,
                         existingBooking.getDateTimeString(),
@@ -103,6 +112,9 @@ public class BookCommand extends Command {
         );
 
         model.setPerson(personToBook, updatedPerson);
+
+        logger.info(String.format("Successfully booked appointment for %s with %s at %s",
+                personName, clientName, datetime));
 
         return new CommandResult(String.format(MESSAGE_SUCCESS,
                 personName,
@@ -143,4 +155,3 @@ public class BookCommand extends Command {
                 .toString();
     }
 }
-

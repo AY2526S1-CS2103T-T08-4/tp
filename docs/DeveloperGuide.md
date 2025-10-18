@@ -302,7 +302,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 #### **Use Case: Add a Person**
 
-**System**: FirstImpressions 
+**System**: FirstImpressions
 **Actor**: User
 
 **Main Success Scenario (MSS):**
@@ -339,7 +339,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Main Success Scenario (MSS):**
 1. User checks list of all persons
-2. User requests to delete specific person 
+2. User requests to delete specific person
 3. FirstImpressions deletes person in the list
 4. Use case ends
 
@@ -429,15 +429,15 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 4.  Searching for 1000 contacts should return under 1s.
 5.  Create, edit, delete actions should be completed under `150`ms.
 6.  Should be able to import 1000 contacts from CSV in 3s or less.
-7.  Should be able to export 1000 contacts to CSV or JSON in 2s or less. 
+7.  Should be able to export 1000 contacts to CSV or JSON in 2s or less.
 8.  UI remains responsive during bulk ops.
-9.  Should perform all writes atomically so that no contact data is lost on crash or power out. 
+9.  Should perform all writes atomically so that no contact data is lost on crash or power out.
 10. Should autosave any contact creation, edit or delete within 1s of the action.
-11. Should be fully usable with keyboard only. 
+11. Should be fully usable with keyboard only.
 12. Should provide clear error message and guidance on failed import/export.
-13. Should work for x86 and ARM processors without modification. 
+13. Should work for x86 and ARM processors without modification.
 14. Should support multiple file types for import and export (CSV/JSON).
-15. Should run offline for all core features. 
+15. Should run offline for all core features.
 16. Should log all system errors to a local file with timestamps.
 17. Should not exceed 100MB in log file size.
 

@@ -95,7 +95,7 @@ public class DeleteCommandTest {
         DeleteCommand deleteCommand = new DeleteCommand(newPerson.getName(),
                 Optional.of(new LinkedHashSet<>(targetTag)));
 
-        CommandResult res = deleteCommand.execute(model);
+        deleteCommand.execute(model);
 
         Person after = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         assertTrue(after.getTags().isEmpty());

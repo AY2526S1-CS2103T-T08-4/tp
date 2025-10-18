@@ -4,10 +4,13 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
@@ -39,6 +42,8 @@ public class DeleteCommand extends Command {
     public static final String MESSAGE_DELETE_TAG_NOT_FOUND = "'%1$s' does not have the tag(s) '%2$s'";
     public static final String MESSAGE_DELETE_TAG_USAGE = "Please provide a tag after 't/'!";
 
+    private static final Logger logger = LogsCenter.getLogger(DeleteCommand.class);
+
     private final Name targetName;
     private final Optional<Set<Tag>> tags;
 
@@ -57,16 +62,26 @@ public class DeleteCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
+
+        logger.info(String.format("Executing DeleteCommand for person: %s", targetName.fullName));
+
         List<Person> lastShownList = model.getFilteredPersonList();
 
         Person personToDelete = findUniquePerson(lastShownList, targetName);
 
         if (tags.isEmpty()) {
+            // Full person deletion
+            logger.info(String.format("Deleting entire person: %s", personToDelete.getName()));
             model.deletePerson(personToDelete);
+
+            logger.info(String.format("Successfully deleted person: %s", personToDelete.getName()));
             return new CommandResult(String.format(MESSAGE_DELETE_PERSON_SUCCESS, Messages.format(personToDelete)));
         }
 
+        // Partial deletion (tags only)
         Set<Tag> tagsToRemove = tags.get();
+        logger.info(String.format("Removing tags %s from person: %s", tagsToRemove, personToDelete.getName()));
+
         Set<Tag> curr = new LinkedHashSet<>(personToDelete.getTags());
 
         Set<Tag> present = new LinkedHashSet<>();
@@ -81,6 +96,7 @@ public class DeleteCommand extends Command {
         }
 
         if (present.isEmpty()) {
+            logger.warning(String.format("No tags found to remove from person: %s", personToDelete.getName()));
             throw new CommandException(String.format(MESSAGE_DELETE_TAG_NOT_FOUND,
                     personToDelete.getName().fullName, missing));
         }
@@ -97,7 +113,9 @@ public class DeleteCommand extends Command {
 
         model.setPerson(personToDelete, updatedPerson);
         model.updateFilteredPersonList(Model.PREDICATE_SHOW_ALL_PERSONS);
+
         String removed = tagsToRemove.stream().map(Tag::toString).collect(Collectors.joining(", "));
+        logger.info(String.format("Successfully removed tags %s from person: %s", present, personToDelete.getName()));
 
         if (!missing.isEmpty()) {
             return new CommandResult(String.format(MESSAGE_DELETE_TAG_PARTIAL, present,
@@ -123,6 +141,11 @@ public class DeleteCommand extends Command {
     }
 
     @Override
+    public int hashCode() {
+        return Objects.hash(targetName, tags);
+    }
+
+    @Override
     public String toString() {
         return new ToStringBuilder(this)
                 .add("targetName", targetName)
@@ -140,26 +163,28 @@ public class DeleteCommand extends Command {
             return false;
         }
         String firstName = name.fullName.toLowerCase();
-        String targetName = target.fullName.toLowerCase();
-        return firstName.contains(targetName);
+        String targetNameLower = target.fullName.toLowerCase();
+        return firstName.contains(targetNameLower);
     }
 
-    private Person findUniquePerson(List<Person> list, Name name) throws CommandException {
-        String queryName = name.toString().trim().replaceAll("\\s+", " ");
+    private Person findUniquePerson(List<Person> list, Name targetName) throws CommandException {
+        String queryName = targetName.toString().trim().replaceAll("\\s+", " ");
 
         List<Person> exactMatch = list.stream()
                 .filter(x -> x.getName().toString().replaceAll("\\s+", " ")
                         .equalsIgnoreCase(queryName))
                 .toList();
         if (exactMatch.size() == 1) {
+            logger.fine(String.format("Found exact match for person: %s", targetName.fullName));
             return exactMatch.get(0);
         }
         if (exactMatch.size() > 1) {
+            logger.warning(String.format("Multiple exact matches found for person: %s", targetName.fullName));
             String allMatches = exactMatch.stream()
                     .map(Messages::format)
                     .collect(Collectors.joining("\n"));
             throw new CommandException(
-                    String.format(MESSAGE_DELETE_PERSON_MULTIPLE_MATCH, name.fullName, allMatches));
+                    String.format(MESSAGE_DELETE_PERSON_MULTIPLE_MATCH, targetName.fullName, allMatches));
         }
 
         List<Person> contains = list.stream()
@@ -167,17 +192,21 @@ public class DeleteCommand extends Command {
                         .contains(queryName.toLowerCase()))
                 .toList();
         if (contains.size() == 1) {
+            logger.fine(String.format("Found partial match for person: %s", targetName.fullName));
             return contains.get(0);
         }
 
         if (contains.isEmpty()) {
-            throw new CommandException(String.format(MESSAGE_DELETE_PERSON_NOT_FOUND, name.fullName));
+            logger.warning(String.format("No person found matching: %s", targetName.fullName));
+            throw new CommandException(String.format(MESSAGE_DELETE_PERSON_NOT_FOUND, targetName.fullName));
         }
+
+        logger.warning(String.format("Multiple partial matches found for person: %s", targetName.fullName));
         String containsMultiple = contains.stream()
                 .map(Messages::format)
                 .collect(Collectors.joining("\n"));
         throw new CommandException(String.format(MESSAGE_DELETE_PERSON_MULTIPLE_MATCH,
-                name.fullName, containsMultiple));
+                targetName.fullName, containsMultiple));
     }
 
 }

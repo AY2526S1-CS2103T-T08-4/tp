@@ -12,7 +12,6 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.FlowPane;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -57,8 +56,6 @@ public class PersonCard extends UiPart<Region> {
     public final Person person;
 
     @FXML
-    private HBox cardPane;
-    @FXML
     private Label name;
     @FXML
     private Label id;
@@ -74,8 +71,6 @@ public class PersonCard extends UiPart<Region> {
     // Table for bookings
     @FXML
     private TableView<BookingRow> bookingTable;
-    @FXML
-    private TableColumn<BookingRow, String> colIndex;
     @FXML
     private TableColumn<BookingRow, String> colBookingId;
     @FXML
@@ -107,7 +102,7 @@ public class PersonCard extends UiPart<Region> {
 
         // Populate booking table (if present in FXML)
         if (bookingTable != null) {
-            setupBookingTable(person, displayedIndex);
+            setupBookingTable(person);
         } else {
             // Fallback to legacy label-based rendering
             person.getBookings().stream()
@@ -134,7 +129,7 @@ public class PersonCard extends UiPart<Region> {
         return TAG_COLORS[colorIndex];
     }
 
-    private void setupBookingTable(Person person, int displayedIndex) {
+    private void setupBookingTable(Person person) {
         // Define column mappings
         colBookingId.setCellValueFactory(new PropertyValueFactory<>("id"));
         colDate.setCellValueFactory(new PropertyValueFactory<>("date"));

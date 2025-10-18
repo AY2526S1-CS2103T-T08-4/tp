@@ -1,0 +1,33 @@
+{
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "java.checkstyle.configurationFile": "${workspaceFolder}/config/checkstyle/checkstyle.xml",
+    "java.format.settings.url": "",
+    "java.format.settings.profile": "",
+    "java.saveActions.organizeImports": false,
+    "java.saveActions.source.organizeImports": false,
+    "java.format.enabled": false,
+    "java.import.gradle.enabled": true,
+    "editor.formatOnSave": false,
+    "editor.formatOnPaste": false,
+    "editor.formatOnType": false,
+    "cursor.cpp.disabledLanguages": [],
+    "cursor.general.enableAutoImport": false,
+    "cursor.java.enableAutoImport": false,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports.sortImports": "never",
+        "source.organizeImports": "never",
+        "source.organizeImports.java": "never",
+        "source.fixAll.eslint": "explicit",
+    },
+    "[java]": {
+        "editor.formatOnSave": false,
+        "editor.formatOnPaste": false,
+        "editor.formatOnType": false,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports.sortImports": "never",
+            "source.organizeImports": "never",
+            "source.organizeImports.java": "never",
+            "source.fixAll.checkstyle": "explicit",
+        },
+    },
+}
