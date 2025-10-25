@@ -239,7 +239,7 @@ The following activity diagram summarizes what happens when a user executes a ne
   * Cons: We must ensure that the implementation of each individual command are correct.
 
 
-### \[Proposed\] Reschedule
+### \[Proposed\] Reschedule Booking
 
 #### Proposed Implementation
 
@@ -345,6 +345,185 @@ The reschedule mechanism allows users to update the datetime of an existing book
 
   - **Unknown parameter:**
     Error: "Unknown parameter. Valid parameters are b/ (booking ID), n/ (team member name), d/ (new datetime)" (Updated list)
+
+### \[Proposed\] Edit Booking Clients/Description
+
+#### Proposed Implementation
+
+The edit booking mechanism allows users to update the client name or description of an existing booking without changing the datetime. This provides flexibility for booking management.
+
+**Operations:**
+
+  - `Model#editBooking(Booking booking, String newClientName, String newDescription)` — Updates the booking with new client name and/or description.
+  - `Booking#setClientName(String newClientName)` — Updates the client name field of a booking.
+  - `Booking#setDescription(String newDescription)` — Updates the description field of a booking.
+
+-----
+
+## Usage Scenario
+
+1.  The user views all bookings and identifies one to edit (e.g., a booking for Carl Kurz).
+
+2.  Executes the command:
+
+    ```
+     editbooking 2 n/Carl c/Madam Wong desc/Updated consultation details
+    ```
+
+    Where:
+
+    `2` = booking ID
+
+    `n/Carl` = team member name (for verification)
+
+    `c/Madam Wong` = new client name
+
+    `desc/Updated consultation details` = new description
+
+    The Logic component parses the command and calls:
+
+    ```
+     model.editBooking(selectedBooking, newClientName, newDescription);
+    ```
+
+    The **Model** validates:
+
+      - The booking exists (using booking ID).
+      - The team member name (`n/`) matches the team member in the booking.
+      - At least one field (client name or description) is provided for update.
+      - All parameters are valid (non-null, proper format).
+
+    If validation passes, the booking details are updated. Otherwise, an error is thrown.
+
+    The **Logic** component returns a `CommandResult` to the UI:
+
+      - **Success Example:**
+
+        ```
+        Booking updated successfully: Carl Kurz, Client: Madam Wong, Description: Updated consultation details
+        ```
+
+      - **Failure Example:** Appropriate error message.
+
+-----
+
+## Design Considerations
+
+### Field Validation:
+
+  - Client name must follow the same validation rules as new bookings.
+  - Description must follow the same validation rules as new bookings.
+  - At least one field must be provided for update.
+
+### Undo/Redo Support:
+
+  - Integration with **VersionedAddressBook**.
+  - Call `Model#commitAddressBook()` after a successful edit.
+
+### Atomicity:
+
+  - Edit booking is **all-or-nothing**: either fully applied or not applied at all.
+
+-----
+
+## Extensions / Error Cases
+
+  - **Booking does not exist:**
+    Error: "Booking ID not found"
+
+  - **No fields to update:**
+    Error: "At least one field (client name or description) must be provided for update"
+
+  - **Invalid client name:**
+    Error: "Invalid client name format"
+
+  - **Invalid description:**
+    Error: "Invalid description format"
+
+  - **Team member mismatch:**
+    Error: "Team member name does not match the booking"
+
+### \[Proposed\] Timezone Support
+
+#### Proposed Implementation
+
+The timezone mechanism allows users to work with bookings across different timezones, making the application suitable for global teams and clients.
+
+**Operations:**
+
+  - `Model#setUserTimezone(ZoneId timezone)` — Sets the user's preferred timezone.
+  - `Booking#getDateTimeInTimezone(ZoneId timezone)` — Returns booking datetime converted to specified timezone.
+  - `Booking#createBookingWithTimezone(String clientName, LocalDateTime datetime, String description, ZoneId timezone)` — Creates booking with timezone awareness.
+
+-----
+
+## Usage Scenario
+
+1.  The user sets their preferred timezone:
+
+    ```
+     settimezone Asia/Singapore
+    ```
+
+2.  The user creates a booking:
+
+    ```
+     book d/2025-09-20 10:30 c/Madam Chen n/Bob Lee desc/consultation
+    ```
+
+    The system stores the booking in the user's timezone and can display it in other timezones when needed.
+
+3.  The user views bookings in a different timezone:
+
+    ```
+     viewbookings timezone America/New_York
+    ```
+
+    All booking times are automatically converted and displayed in the specified timezone.
+
+-----
+
+## Design Considerations
+
+### Timezone Storage:
+
+  - Store all booking datetimes in UTC internally.
+  - Convert to user's preferred timezone for display.
+  - Allow temporary timezone switching for viewing.
+
+### User Preferences:
+
+  - Store user's default timezone in `UserPrefs`.
+  - Allow timezone changes without affecting existing bookings.
+  - Provide timezone validation and error handling.
+
+### Display Format:
+
+  - Show timezone information in booking displays.
+  - Provide clear indication when times are converted.
+  - Support multiple timezone formats (e.g., UTC+8, Asia/Singapore).
+
+### Data Migration:
+
+  - Existing bookings without timezone information default to UTC.
+  - Provide migration tools for existing data.
+  - Maintain backward compatibility.
+
+-----
+
+## Extensions / Error Cases
+
+  - **Invalid timezone:**
+    Error: "Invalid timezone format. Use format like 'Asia/Singapore' or 'UTC+8'"
+
+  - **Timezone not found:**
+    Error: "Timezone not recognized. Please use a valid timezone identifier"
+
+  - **Conversion errors:**
+    Error: "Unable to convert datetime to specified timezone"
+
+  - **Missing timezone:**
+    Error: "Please set your preferred timezone using 'settimezone' command"
 
 
 --------------------------------------------------------------------------------------------------------------------
@@ -607,29 +786,201 @@ testers are expected to do more *exploratory* testing.
    1. Re-launch the app by double-clicking the jar file.<br>
        Expected: The most recent window size and location is retained.
 
-1. _{ more test cases …​ }_
+1. **Command line launch**
+   
+   1. Open a command terminal and navigate to the folder containing the jar file.
+   
+   1. Run `java -jar firstimpressions.jar`<br>
+      Expected: Application launches successfully with the GUI.
 
-### Deleting a person
+### Adding a person
 
-1. Deleting a person while all persons are being shown
+1. **Adding a person with all fields**
+
+   1. Prerequisites: List all persons using the `list` command.
+
+   2. Test case: `add n/John Doe p/98765432 e/johndoe@example.com t/friends`<br>
+      Expected: Person is added to the list. Success message shown. Person appears in the contact list.
+
+2. **Adding a person with minimal fields**
+
+   1. Test case: `add n/Jane Smith`<br>
+      Expected: Person is added with only name. Phone and email are empty. Success message shown.
+
+3. **Adding a duplicate person**
+
+   1. Test case: `add n/John Doe p/98765432 e/johndoe@example.com` (assuming John Doe already exists)<br>
+      Expected: Error message "This person already exists in the address book" is shown.
+
+4. **Adding a person with invalid data**
+
+   1. Test case: `add n/ p/123 e/invalid-email`<br>
+      Expected: Error message "Names should only contain alphabetic characters, spaces, apostrophes, and hyphens"
+
+### Editing a person
+
+1. **Editing a person's details**
 
    1. Prerequisites: List all persons using the `list` command. Multiple persons in the list.
 
-   1. Test case: `delete 1`<br>
-      Expected: First contact is deleted from the list. Details of the deleted contact shown in the status message. Timestamp in the status bar is updated.
+   2. Test case: `edit n/John Doe p/91234567 e/newemail@example.com`<br>
+      Expected: Person named "John Doe" has their phone and email updated. Success message shown.
 
-   1. Test case: `delete 0`<br>
-      Expected: No person is deleted. Error details shown in the status message. Status bar remains the same.
+2. **Editing with non-existent person**
 
-   1. Other incorrect delete commands to try: `delete`, `delete x`, `...` (where x is larger than the list size)<br>
-      Expected: Similar to previous.
+   1. Test case: `edit n/NonExistentPerson p/91234567`<br>
+      Expected: Error message "Person with name 'NonExistentPerson' not found in the address book" is shown.
 
-1. _{ more test cases …​ }_
+3. **Editing with no fields**
+
+   1. Test case: `edit n/John Doe`<br>
+      Expected: Error message "At least one field to edit must be provided" is shown.
+
+4. **Editing with case-sensitive name**
+
+   1. Prerequisites: Person "John Doe" exists in the list.
+
+   2. Test case: `edit n/john doe p/91234567`<br>
+      Expected: Error message "Person with name 'john doe' not found in the address book" is shown (case-sensitive).
+
+### Finding persons
+
+1. **Finding by name**
+
+   1. Prerequisites: Multiple persons in the address book.
+
+   2. Test case: `find n/John`<br>
+      Expected: All persons with "John" in their name are listed.
+
+2. **Finding by tag**
+
+   1. Test case: `find t/friends`<br>
+      Expected: All persons with the "friends" tag are listed.
+
+3. **Finding by date**
+
+   1. Prerequisites: Some persons have bookings on specific dates.
+
+   2. Test case: `find d/2025-10-20`<br>
+      Expected: All persons with bookings on 2025-10-20 are listed.
+
+4. **Finding with no results**
+
+   1. Test case: `find n/NonExistentPerson`<br>
+      Expected: "0 persons listed!" message is shown.
+
+### Deleting a person
+
+1. **Deleting a person while all persons are being shown**
+
+   1. Prerequisites: List all persons using the `list` command. Multiple persons in the list.
+
+   2. Test case: `delete n/John Doe`<br>
+      Expected: Person named "John Doe" is deleted from the list. Details of the deleted contact shown in the status message.
+
+2. **Deleting a person that doesn't exist**
+
+   1. Test case: `delete n/NonExistentPerson`<br>
+      Expected: Error message "Person not found" is shown.
+
+3. **Deleting with case-sensitive name**
+
+   1. Prerequisites: Person "John Doe" exists in the list.
+
+   2. Test case: `delete n/john doe`<br>
+      Expected: Error message "Person not found" is shown (case-sensitive).
+
+### Booking appointments
+
+1. **Creating a booking**
+
+   1. Prerequisites: At least one person exists in the contact list.
+
+   2. Test case: `book d/2025-12-25 10:00 c/Madam Chen n/John Doe desc/Consultation`<br>
+      Expected: Booking is created successfully. Success message shown. Booking appears in the person's details.
+
+2. **Creating a booking with past date**
+
+   1. Test case: `book d/2020-01-01 10:00 c/Madam Chen n/John Doe`<br>
+      Expected: Error message "Invalid date: must be in format YYYY-MM-DD HH:MM and in the future" is shown.
+
+3. **Creating a double booking**
+
+   1. Prerequisites: Person "John Doe" already has a booking at 2025-12-25 10:00.
+
+   2. Test case: `book d/2025-12-25 10:00 c/Mr Lim n/John Doe desc/Another consultation`<br>
+      Expected: Error message about double booking is shown.
+
+4. **Creating a booking for non-existent person**
+
+   1. Test case: `book d/2025-12-25 10:00 c/Madam Chen n/NonExistentPerson`<br>
+      Expected: Error message "Person not found" is shown.
+
+### Clearing all entries
+
+1. **Clearing all data**
+
+   1. Prerequisites: Multiple persons and bookings exist in the address book.
+
+   2. Test case: `clear`<br>
+      Expected: All persons and bookings are removed. Success message shown. Contact list becomes empty.
 
 ### Saving data
 
-1. Dealing with missing/corrupted data files
+1. **Dealing with missing data files**
 
-   1. _{explain how to simulate a missing/corrupted file, and the expected behavior}_
+   1. Close the application.
 
-1. _{ more test cases …​ }_
+   2. Delete the `data/addressbook.json` file from the application folder.
+
+   3. Launch the application again.<br>
+      Expected: Application starts with empty data. No error messages.
+
+2. **Dealing with corrupted data files**
+
+   1. Close the application.
+
+   2. Open `data/addressbook.json` in a text editor and corrupt the JSON format (e.g., remove a closing brace).
+
+   3. Launch the application again.<br>
+      Expected: Application starts with empty data. Error message logged but application continues to work.
+
+3. **Data persistence**
+
+   1. Add a person using `add n/Test Person p/12345678 e/test@example.com`.
+
+   2. Close the application.
+
+   3. Launch the application again.<br>
+      Expected: The person "Test Person" is still in the contact list.
+
+### Help command
+
+1. **Accessing help**
+
+   1. Test case: `help`<br>
+      Expected: Help window opens showing available commands and User Guide link.
+
+### Exit command
+
+1. **Exiting the application**
+
+   1. Test case: `exit`<br>
+      Expected: Application closes immediately.
+
+### Error handling
+
+1. **Invalid commands**
+
+   1. Test case: `invalidcommand`<br>
+      Expected: Error message "Unknown command" is shown.
+
+2. **Malformed commands**
+
+   1. Test case: `add n/` (missing name)<br>
+      Expected: Error message about invalid command format is shown.
+
+3. **Commands with extra parameters**
+
+   1. Test case: `help extraparameter`<br>
+      Expected: Help window still opens (extra parameters ignored).
